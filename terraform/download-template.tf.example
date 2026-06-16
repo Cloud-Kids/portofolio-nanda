@@ -1,0 +1,31 @@
+# ==========================================
+# 📦 Download CT Template Otomatis (OPSIONAL)
+# ==========================================
+# File ini TIDAK aktif secara default (.tf.example).
+# Rename ke download-template.tf jika kamu mau Terraform
+# otomatis download template OS ke storage Proxmox.
+#
+# Gunakan saat kamu malas download manual dari dashboard!
+# ==========================================
+
+# ── Alpine Linux 3.23 ──
+resource "proxmox_virtual_environment_file" "alpine_template" {
+  content_type = "vztmpl"
+  datastore_id = "local"
+  node_name    = "node1"
+
+  source_file {
+    path = "https://images.linuxcontainers.org/images/alpine/3.23/amd64/default/20250615_13:00/rootfs.tar.xz"
+  }
+}
+
+# ── Debian Trixie (uncomment jika butuh) ──
+# resource "proxmox_virtual_environment_file" "debian_template" {
+#   content_type = "vztmpl"
+#   datastore_id = "local"
+#   node_name    = "node1"
+#
+#   source_file {
+#     path = "https://images.linuxcontainers.org/images/debian/trixie/amd64/default/20250615_05:12/rootfs.tar.xz"
+#   }
+# }
