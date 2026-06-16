@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nanda CySec — Cybersecurity & Web Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="cinematic-intro.css">
+  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;700&display=swap"
+    rel="stylesheet">
+
+</head>
+
+<body class="ci-active">
+
+
+  <!-- Music Player -->
+  <audio id="bg-music" loop>
+    <source src="the-night-it-still-young.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Music Toggle Button -->
+  <div id="music-toggle" onclick="toggleMusic()" title="Toggle Music">
+    🎵
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- ═══ CINEMATIC INTRO — HOLLYWOOD FILM SEQUENCE ════ -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div id="ci-root" class="ci-root ci-active">
+
+    <!-- Canvas: particles, glitch, bars, flash -->
+    <canvas id="ci-canvas" class="ci-canvas"></canvas>
+
+    <!-- ── PHASE 1: Story Lines ── -->
+    <div id="ci-story" class="ci-story" style="display:none">
+      <div id="ci-story-line" class="ci-story-line"></div>
+    </div>
+
+    <!-- ── PHASE 2: Boot Sequence ── -->
+    <div id="ci-boot" class="ci-boot" style="display:none">
+      <div class="ci-boot-header">
+        <span class="ci-boot-tag">SYS://NANDA_CYSEC</span>
+        <span class="ci-boot-ver">v3.0.1 — 2026</span>
+      </div>
+
+      <div class="ci-boot-lines">
+        <div class="ci-boot-line" id="ci-bl-0" style="display:none">
+          <span class="ci-bl-prefix">◈</span>
+          <span class="ci-bl-text"></span>
+          <span class="ci-bl-stat"></span>
+        </div>
+        <div class="ci-boot-line" id="ci-bl-1" style="display:none">
+          <span class="ci-bl-prefix">◈</span>
+          <span class="ci-bl-text"></span>
+          <span class="ci-bl-stat"></span>
+        </div>
+        <div class="ci-boot-line" id="ci-bl-2" style="display:none">
+          <span class="ci-bl-prefix">◈</span>
+          <span class="ci-bl-text"></span>
+          <span class="ci-bl-stat"></span>
+        </div>
+        <div class="ci-boot-line" id="ci-bl-3" style="display:none">
+          <span class="ci-bl-prefix ci-bl-prefix--red">⚡</span>
+          <span class="ci-bl-text"></span>
+          <span class="ci-bl-stat"></span>
+        </div>
+        <div class="ci-boot-line" id="ci-bl-4" style="display:none">
+          <span class="ci-bl-prefix">◈</span>
+          <span class="ci-bl-text"></span>
+          <span class="ci-bl-stat"></span>
+        </div>
+        <div class="ci-boot-line" id="ci-bl-5" style="display:none">
+          <span class="ci-bl-prefix">◈</span>
+          <span class="ci-bl-text"></span>
+          <span class="ci-bl-stat"></span>
+        </div>
+        <div class="ci-boot-line ci-boot-line--access" id="ci-bl-6" style="display:none">
+          <span class="ci-bl-prefix ci-bl-prefix--red">▶</span>
+          <span class="ci-bl-text"></span>
+          <span class="ci-bl-stat"></span>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="ci-bar-wrap">
+        <div class="ci-bar-track">
+          <div class="ci-bar-fill" id="ci-bar-fill"></div>
+          <div class="ci-bar-glow"></div>
+        </div>
+        <span id="ci-bar-fill-pct" class="ci-bar-pct">0%</span>
+      </div>
+    </div>
+
+    <!-- ── PHASE 3: Cinematic Hero Reveal ── -->
+    <div id="ci-hero" class="ci-hero" style="display:none">
+      <div class="ci-hero-eyebrow" data-delay="0">A DIGITAL EXPERIENCE</div>
+      <div class="ci-hero-divider" data-delay="500"></div>
+      <div class="ci-hero-created" data-delay="800">CREATED BY</div>
+      <h1 class="ci-hero-name" data-delay="1100">NANDA AFIF<br><span>AL FATHONI</span></h1>
+      <div class="ci-hero-divider ci-hero-divider--slim" data-delay="1700"></div>
+      <p class="ci-hero-roles" data-delay="1900">Web Developer &nbsp;•&nbsp; UI/UX Designer &nbsp;•&nbsp; Cybersecurity Enthusiast</p>
+      <p class="ci-hero-tagline" data-delay="2300">&ldquo;Crafting immersive digital experiences through code, creativity, and innovation.&rdquo;</p>
+      <div class="ci-hero-cta-wrap" data-delay="2800">
+        <button class="ci-hero-cta" onclick="ciSkip()">
+          <span class="ci-hero-cta-inner">Explore My Journey</span>
+          <span class="ci-hero-cta-arrow">↗</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Skip hint -->
+    <button class="ci-skip-hint" onclick="ciSkip()">ESC to skip</button>
+
+  </div><!-- /ci-root -->
+
+  <!-- Cursor -->
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a href="#" class="nav-logo">Home</a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#process">Process</a></li>
+      <li><a href="#testimonials">Reviews</a></li>
+      <li><a href="#contact" class="nav-cta">Let's Talk ↗</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <!-- Cinematic video-like animated background -->
+    <div class="hero-aurora">
+      <div class="aurora-blob"></div>
+      <div class="aurora-blob"></div>
+      <div class="aurora-blob"></div>
+      <div class="aurora-blob"></div>
+      <div class="aurora-blob"></div>
+    </div>
+    <div class="hero-grain"></div>
+    <div class="hero-streak"></div>
+    <div class="hero-streak"></div>
+    <div class="hero-streak"></div>
+    <div class="hero-glow"></div>
+    <!-- 3D Spline Robot -->
+    <div class="hero-spline">
+      <spline-viewer url="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"></spline-viewer>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">Cybersecurity Specialist &amp; Web Designer</div>
+      <h1 class="hero-name">
+        <span class="word">Nanda</span> <span class="word">CySec</span>
+        <span class="word hero-arrow-wrap"><span class="hero-arrow"
+            onclick="document.getElementById('projects').scrollIntoView({behavior:'smooth'})">↗</span></span>
+      </h1>
+      <p class="hero-sub">Cybersecurity specialist & web designer crafting visually stunning, secure, and
+        high-converting digital experiences. Let's build something extraordinary.</p>
+      <div class="hero-btns">
+        <a href="#projects" class="btn btn-primary">View My Work</a>
+        <a href="#contact" class="btn btn-ghost">Get In Touch</a>
+      </div>
+    </div>
+    <div class="float-testimonials">
+      <div class="float-card">
+        <p>"Incredible attention to security & design"</p><span class="author">Carina Lee</span>
+      </div>
+      <div class="float-card">
+        <p>"Seamless experience from start to finish"</p><span class="author">Debbie Madison</span>
+      </div>
+    </div>
+    <div class="hero-projects">
+      <div class="hero-proj-card">
+        <div class="hero-proj-inner" style="color:rgba(167,139,250,0.4)">EL</div>
+      </div>
+      <div class="hero-proj-card">
+        <div class="hero-proj-inner"
+          style="font-size:16px;color:rgba(167,139,250,0.3);font-family:'DM Serif Display',serif;font-style:italic;">
+          Pure Collection</div>
+      </div>
+      <div class="hero-proj-card">
+        <div class="hero-proj-inner"
+          style="font-size:14px;color:rgba(167,139,250,0.25);font-family:'JetBrains Mono',monospace;letter-spacing:0.1em;">
+          MY STY-</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="container">
+      <div class="about-card-box">
+        <div class="s-label">About Me</div>
+        <div class="about-grid">
+          <!-- REALISTIC NAVY BLUE LANYARD -->
+          <div class="lanyard-wrap" id="lanyardWrap">
+            <!-- Fabric strap canvas -->
+            <canvas id="lanyardCanvas"></canvas>
+            <!-- Anchor clip at top -->
+            <div class="lanyard-anchor">
+              <div class="lanyard-anchor-bar"></div>
+            </div>
+            <!-- The card holder assembly -->
+            <div class="lanyard-card" id="lanyardCard">
+              <!-- 3D wrapper for the whole assembly -->
+              <div class="lc-3d-wrapper" id="lanyard3dWrapper">
+                <!-- D-ring at very top -->
+                <div class="lc-dring-wrap">
+                  <div class="lc-dring"></div>
+                </div>
+                <!-- Swivel clip -->
+                <div class="lc-clip">
+                  <div class="lc-clip-body"></div>
+                  <div class="lc-clip-gate"></div>
+                </div>
+
+                <!-- Pouch Wrapper for Front and Back -->
+                <div class="lc-pouch-wrapper">
+                  <!-- Navy blue outer pouch (FRONT) -->
+                  <div class="lc-outer lc-front">
+                    <!-- Zipper at top -->
+                    <div class="lc-zipper">
+                      <div class="lc-zipper-pull"></div>
+                    </div>
+                    <!-- Clear window with white ID card inside -->
+                    <div class="lc-window">
+                      <div class="lc-id-card">
+                        <div class="lc-id-top-bar"></div>
+                        <div class="lc-id-logo">Cyber Security Analyst</div>
+                        <div class="lc-id-photo">
+                          <!-- Tambahkan foto pribadi kamu dengan mengubah link/path pada src di bawah ini -->
+                          <img src="assect/c1ac0b4d-ceba-4768-b9c9-c1c8f6e729ed.jpeg" alt="Personal Photo"
+                            id="myProfilePhoto">
+                        </div>
+                        <div class="lc-id-name">Nanda Afif</div>
+                        <div class="lc-id-role">Cybersecurity Specialist</div>
+                        <div class="lc-id-rule"></div>
+                        <div class="lc-id-footer">
+                          <div class="lc-id-qr" id="lcQr"></div>
+                          <div class="lc-id-info">
+                            <div class="lc-id-num">NC-2025-001</div>
+                            <div class="lc-id-status">● ACTIVE</div>
+                            <div class="lc-id-holo"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Bottom strip -->
+                    <div class="lc-bottom-strip"></div>
+                  </div>
+
+                  <!-- Navy blue outer pouch (BACK) -->
+                  <div class="lc-outer lc-back">
+                    <div class="lc-zipper">
+                      <div class="lc-zipper-pull" style="right: auto; left: 12px;"></div>
+                    </div>
+                    <div class="lc-back-content">
+                      <div class="lc-back-magnetic"></div>
+                      <div class="lc-back-logo">CLASSIFIED</div>
+                      <div class="lc-back-barcode">|||| ||| || |||| | || |||</div>
+                      <div class="lc-back-text">IF FOUND, DROP IN ANY SECURE MAILBOX. POSTAGE GUARANTEED.</div>
+                      <div class="lc-back-chip"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h2 class="about-title reveal">Nanda, <em>Cyber Security Specialist</em></h2>
+            <p class="about-bio reveal">I'm Nanda afif a passionate cybersecurity specialist and web designer. I
+              combine security-first thinking with modern design to create digital experiences that are both beautiful
+              and bulletproof.</p>
+            <div class="skill-tags reveal">
+              <span class="tag">✦ Cybersecurity</span>
+              <span class="tag">Framer</span>
+              <span class="tag">Figma</span>
+              <span class="tag">linux fund-</span>
+              <span class="tag">Web Design</span>
+              <span class="tag">UI/UX</span>
+              <span class="tag">Webflow</span>
+              <span class="tag">CTF</span>
+              <span class="tag">Penetration Testing</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <div class="s-label">Selected Work</div>
+          <h2 class="section-title reveal">Recent Projects <a class="arrow-link" href="#contact">↗</a></h2>
+          <p class="section-sub reveal">Handcrafted websites with security & aesthetics in mind</p>
+        </div>
+        <div class="section-actions reveal">
+          <a href="#" class="btn btn-primary" style="padding:10px 22px;font-size:13px;">All Projects</a>
+          <a href="#contact" class="btn btn-ghost" style="padding:10px 22px;font-size:13px;">Hire Me</a>
+        </div>
+      </div>
+      <div class="projects-grid">
+        <div class="proj-card reveal">
+          <div class="proj-card-inner">
+            <div
+              style="position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;font-size:11px;color:var(--gray2)">
+              <span>kakaa-hx3y.vercel.app</span><span style="color:var(--accent);opacity:0.4">LIVE</span>
+            </div>
+            <div class="proj-label">EDGY LEATHER</div>
+            <div class="proj-sublabel">Web Design · Memories</div>
+            <div class="proj-arrow">↗</div>
+            <div class="proj-overlay">
+              <div class="proj-view-btn">View Project ↗</div>
+            </div>
+          </div>
+        </div>
+        <div class="proj-card reveal">
+          <div class="proj-card-inner">
+            <div
+              style="position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;font-size:11px;color:var(--gray2)">
+              <span>purecollection.com</span><span style="color:var(--accent);opacity:0.4">LIVE</span>
+            </div>
+            <div
+              style="font-family:'DM Serif Display',serif;font-style:italic;font-size:clamp(22px,3vw,36px);color:rgba(255,255,255,0.7);text-align:center">
+              Pure<br><em style="font-size:0.6em;opacity:0.5">Collection</em></div>
+            <div class="proj-sublabel">Luxury · Branding</div>
+            <div class="proj-arrow">↗</div>
+            <div class="proj-overlay">
+              <div class="proj-view-btn">View Project ↗</div>
+            </div>
+          </div>
+        </div>
+        <div class="proj-card reveal">
+          <div class="proj-card-inner">
+            <div
+              style="position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;font-size:11px;color:var(--gray2)">
+              <span>newstyle.com</span><span style="color:var(--accent);opacity:0.4">LIVE</span>
+            </div>
+            <div class="proj-label" style="font-size:clamp(18px,3vw,32px)">NEW STY—</div>
+            <div class="proj-sublabel">Fashion · Comfort Wear</div>
+            <div class="proj-arrow">↗</div>
+            <div class="proj-overlay">
+              <div class="proj-view-btn">View Project ↗</div>
+            </div>
+          </div>
+        </div>
+        <div class="proj-card reveal">
+          <div class="proj-card-inner">
+            <div
+              style="position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;font-size:11px;color:var(--gray2)">
+              <span>minimalco.com</span><span style="color:var(--accent);opacity:0.4">LIVE</span>
+            </div>
+            <div class="proj-label" style="opacity:0.5;color:var(--accent)">MNML</div>
+            <div class="proj-sublabel">Minimal Fashion Studio</div>
+            <div class="proj-arrow">↗</div>
+            <div class="proj-overlay">
+              <div class="proj-view-btn">View Project ↗</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section id="process">
+    <div class="container">
+      <div class="s-label">My Process</div>
+      <h2 class="process-title-big reveal">How I Work</h2>
+      <p class="process-sub reveal">From first call to launch — a streamlined journey to your perfect website</p>
+      <div class="process-grid">
+        <div class="process-card reveal"><span class="process-num">01</span><span class="process-icon">◇</span>
+          <p class="process-step-label">Discovery</p>
+          <h3>Let's Get In Touch</h3>
+          <p>We start with a call to understand your vision, goals, and brand. No corporate jargon — just real
+            conversation.</p>
+        </div>
+        <div class="process-card reveal"><span class="process-num">02</span><span class="process-icon">◈</span>
+          <p class="process-step-label">Design</p>
+          <h3>Wireframe & Visual Design</h3>
+          <p>I craft wireframes and high-fidelity designs that map out every pixel of your user experience.</p>
+        </div>
+        <div class="process-card reveal"><span class="process-num">03</span><span class="process-icon">ϟ</span>
+          <p class="process-step-label">Build</p>
+          <h3>Development & Security</h3>
+          <p>Your design becomes a fast, secure, fully functional website — with security baked in from the ground up.
+          </p>
+        </div>
+        <div class="process-card reveal"><span class="process-num">04</span><span class="process-icon">△</span>
+          <p class="process-step-label">Launch</p>
+          <h3>Deploy & Optimize</h3>
+          <p>We test everything, connect your domain, configure SEO, and go live. Then we optimize for peak
+            performance.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY ME -->
+  <section id="why">
+    <div class="container">
+      <div class="s-label">Why Choose Me</div>
+      <h2 class="section-title reveal"
+        style="font-family:'DM Serif Display',serif;font-size:clamp(36px,5vw,58px);letter-spacing:-0.03em;font-weight:400">
+        Your Ideal Design Partner</h2>
+      <p class="section-sub reveal" style="margin-top:10px">Security first mindset meets pixelperfect design</p>
+      <div class="why-grid">
+        <div class="why-card reveal">
+          <div class="why-check">⛨</div>
+          <h3>Security-First Design</h3>
+          <p>With a cybersecurity background, every site I build has security woven into its DNA from SSL to XSS
+            protection, nothing is an afterthought.</p>
+        </div>
+        <div class="why-card reveal">
+          <div class="why-check">⎔</div>
+          <h3>Psychology-Based UX</h3>
+          <p>I design with intention using layout, color theory, and behavioral patterns to guide visitors naturally
+            toward conversion.</p>
+        </div>
+        <div class="why-card reveal">
+          <div class="why-check">▭</div>
+          <h3>Mobile-First & Blazing Fast</h3>
+          <p>Every website is optimized for mobile first and built for speed. No compromises on performance or user
+            experience.</p>
+        </div>
+        <div class="why-card reveal">
+          <div class="why-check">≡</div>
+          <h3>Transparent & Stress-Free</h3>
+          <p>Clear communication, regular updates, and on-time delivery. You focus on your business I handle the rest.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section id="testimonials">
+    <div class="container">
+      <div class="testi-layout">
+        <div class="testi-left">
+          <div class="s-label">Client Stories</div>
+          <h2 class="reveal">Trusted by <em style="color:var(--accent)">20+</em> clients</h2>
+          <p class="reveal">Real results from real partnerships — helping businesses grow with design that converts.
+          </p>
+          <div class="stats-row reveal">
+            <div class="stat-box">
+              <div class="num" data-target="20">0</div>
+              <div class="lbl">Happy Clients</div>
+            </div>
+            <div class="stat-box">
+              <div class="num" data-target="500">0</div>
+              <div class="lbl">Revenue Added ($k)</div>
+            </div>
+            <div class="stat-box">
+              <div class="num" data-target="4.9" data-decimal="true">0</div>
+              <div class="lbl">Avg. Rating</div>
+            </div>
+          </div>
+          <div class="section-actions">
+            <a href="#projects" class="btn btn-primary" style="padding:10px 22px;font-size:13px;">See Projects</a>
+            <a href="#contact" class="btn btn-ghost" style="padding:10px 22px;font-size:13px;">Work With Me</a>
+          </div>
+        </div>
+        <div class="testi-cards-container reveal">
+          <div class="testi-marquee">
+            <!-- Set 1 -->
+            <div class="testi-card">
+              <div class="testi-top">
+                <div class="testi-avatar">IS</div>
+                <div class="testi-info">
+                  <div class="name">Ikta Sollork</div>
+                  <div class="role">Liloch — AIO Founder</div>
+                </div>
+              </div>
+              <div class="stars">★★★★★</div>
+              <blockquote>"Exceptional creativity and attention to detail! The final product not only looks amazing
+                but
+                the security audit gave us total peace of mind."</blockquote>
+            </div>
+            <div class="testi-card">
+              <div class="testi-top">
+                <div class="testi-avatar">DS</div>
+                <div class="testi-info">
+                  <div class="name">Diane Swag</div>
+                  <div class="role">Swag Studio</div>
+                </div>
+              </div>
+              <div class="stars">★★★★★</div>
+              <blockquote>"Working with Nanda was the best decision for our brand. She understood our vision and
+                delivered beyond expectations — on time and on budget."</blockquote>
+            </div>
+            <div class="testi-card">
+              <div class="testi-top">
+                <div class="testi-avatar">MC</div>
+                <div class="testi-info">
+                  <div class="name">Marcus Chen</div>
+                  <div class="role">EdgeWear — CEO</div>
+                </div>
+              </div>
+              <div class="stars">★★★★★</div>
+              <blockquote>"Our conversion rate tripled in the first month. The combination of beautiful design and
+                rock-solid security is unmatched."</blockquote>
+            </div>
+
+            <!-- Set 2 (Duplicate for infinite scroll) -->
+            <div class="testi-card">
+              <div class="testi-top">
+                <div class="testi-avatar">IS</div>
+                <div class="testi-info">
+                  <div class="name">Ikta Sollork</div>
+                  <div class="role">Liloch — AIO Founder</div>
+                </div>
+              </div>
+              <div class="stars">★★★★★</div>
+              <blockquote>"Exceptional creativity and attention to detail! The final product not only looks amazing
+                but
+                the security audit gave us total peace of mind."</blockquote>
+            </div>
+            <div class="testi-card">
+              <div class="testi-top">
+                <div class="testi-avatar">DS</div>
+                <div class="testi-info">
+                  <div class="name">Diane Swag</div>
+                  <div class="role">Swag Studio</div>
+                </div>
+              </div>
+              <div class="stars">★★★★★</div>
+              <blockquote>"Working with Nanda was the best decision for our brand. She understood our vision and
+                delivered beyond expectations — on time and on budget."</blockquote>
+            </div>
+            <div class="testi-card">
+              <div class="testi-top">
+                <div class="testi-avatar">MC</div>
+                <div class="testi-info">
+                  <div class="name">Marcus Chen</div>
+                  <div class="role">EdgeWear — CEO</div>
+                </div>
+              </div>
+              <div class="stars">★★★★★</div>
+              <blockquote>"Our conversion rate tripled in the first month. The combination of beautiful design and
+                rock-solid security is unmatched."</blockquote>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="contact-header">
+      <div class="s-label">Get In Touch</div>
+      <h2 class="contact-tagline reveal">
+        Let's <span class="rotate-words"><span class="word">create</span><span class="word">secure</span><span
+            class="word">build</span></span><br>something incredible together.
+      </h2>
+      <div class="contact-info" <a href="mailto:hello@nandacysec.com"></a>
+        <div class="contact-col">
+          <h4>Email</h4><a href="mailto:afifgwantengfull@gmail.com">afifgwantengfull@gmail.com</a>
+        </div>
+        <div class="contact-col">
+          <h4>Let's Talk</h4><a href="https://ngl.link/nanda66270" target="_blank" rel="noopener noreferrer">Book a
+            Call
+            ↗</a>
+        </div>
+        <div class="contact-col">
+          <h4>Social</h4>
+          <div class="social-icons"><a class="social-icon" href="#">𝕏</a><a class="social-icon"
+              href="https://wa.me/6285771986104" target="_blank" rel="noopener noreferrer">wa</a><a class="social-icon"
+              href="https://www.instagram.com/invictus_maneoix" target="_blank" rel="noopener noreferrer">ig</a></div>
+        </div>
+        <div class="contact-col">
+          <h4>Menu</h4><a href="#projects" style="display:block;margin-bottom:4px">Work</a><a href="#process"
+            style="display:block;margin-bottom:4px">Process</a><a href="#about" style="display:block">About</a>
+        </div>
+        <div class="contact-col">
+          <h4>Legal</h4><a href="#" onclick="openLegalModal('terms');return false;"
+            style="display:block;margin-bottom:4px">Terms</a><a href="#"
+            onclick="openLegalModal('privacy');return false;" style="display:block">Privacy</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-big-name">NANDA CYSEC</div>
+    <div class="footer-bottom">
+      <p>© 2026 Nanda CySec. Built with ⛨ & ✦</p>
+      <ul class="footer-menu">
+        <li><a href="#" onclick="openLegalModal('terms');return false;">Terms</a></li>
+        <li><a href="#" onclick="openLegalModal('privacy');return false;">Privacy</a></li>
+        <li><a href="#hero">Back to Top</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Back to top -->
+  <div class="back-to-top" id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
+
+  <!-- ═══ TERMS OF SERVICE MODAL ═══ -->
+  <div id="modal-terms" class="legal-modal-overlay" onclick="closeLegalModal('terms')">
+    <div class="legal-modal" onclick="event.stopPropagation()">
+      <button class="legal-modal-close" onclick="closeLegalModal('terms')">✕</button>
+      <div class="legal-modal-header">
+        <div class="legal-modal-badge">Legal Document</div>
+        <h2>Terms of Service</h2>
+        <p class="legal-modal-meta">Last updated: June 1, 2025 &nbsp;·&nbsp; Effective immediately</p>
+      </div>
+      <div class="legal-modal-body">
+
+        <div class="legal-section">
+          <h3><span class="legal-num">01</span> Acceptance of Terms</h3>
+          <p>By accessing and using this portfolio website (<strong>nandacysec.com</strong>), you acknowledge that you
+            have read, understood, and agree to be bound by these Terms of Service. If you do not agree with any part
+            of
+            these terms, please discontinue use of this website immediately.</p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">02</span> Intellectual Property Rights</h3>
+          <p>All content displayed on this website — including but not limited to designs, graphics, written copy,
+            project showcases, logos, animations, and code — is the exclusive intellectual property of <strong>Nanda
+              Afif (Nanda CySec)</strong> and is protected under applicable copyright and intellectual property laws.
+          </p>
+          <ul>
+            <li>You may <strong>not</strong> reproduce, copy, distribute, or commercially exploit any content from
+              this
+              website without prior written consent.</li>
+            <li>You may share links to this website for personal, non-commercial reference purposes.</li>
+            <li>Client project work displayed herein is shared with permission and remains the property of respective
+              clients.</li>
+          </ul>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">03</span> Services & Project Engagements</h3>
+          <p>This website serves as a professional portfolio and point of contact for freelance services in web design
+            and cybersecurity consulting. Any formal service engagement is governed by a separate written agreement
+            between Nanda CySec and the client. Information on this website does not constitute a binding service
+            contract.</p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">04</span> Accuracy of Information</h3>
+          <p>While every effort is made to ensure the accuracy of information presented on this portfolio, content
+            including project details, statistics, and testimonials reflects information available at the time of
+            publication. Nanda CySec reserves the right to update or modify content at any time without prior notice.
+          </p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">05</span> Third-Party Links</h3>
+          <p>This website may contain links to third-party platforms (including but not limited to WhatsApp,
+            Instagram,
+            and NGL). Nanda CySec is not responsible for the content, privacy practices, or terms of these external
+            platforms. Visiting third-party links is done at your own discretion.</p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">06</span> Limitation of Liability</h3>
+          <p>Nanda CySec shall not be held liable for any direct, indirect, incidental, or consequential damages
+            arising
+            from your use of this website, including but not limited to technical errors, service interruptions, or
+            reliance on any content presented herein.</p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">07</span> Governing Law</h3>
+          <p>These Terms of Service are governed by and construed in accordance with the laws of the Republic of
+            Indonesia. Any disputes arising from these terms shall be subject to the jurisdiction of the competent
+            courts in Indonesia.</p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">08</span> Contact</h3>
+          <p>For any questions regarding these Terms of Service, please reach out via <a
+              href="mailto:afifgwantengfull@gmail.com" style="color:var(--accent)">afifgwantengfull@gmail.com</a>.</p>
+        </div>
+
+      </div>
+      <div class="legal-modal-footer">
+        <p>© 2025 Nanda CySec. All rights reserved.</p>
+        <button class="btn btn-primary" style="padding:10px 24px;font-size:13px;" onclick="closeLegalModal('terms')">I
+          Understand</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PRIVACY POLICY MODAL ═══ -->
+  <div id="modal-privacy" class="legal-modal-overlay" onclick="closeLegalModal('privacy')">
+    <div class="legal-modal" onclick="event.stopPropagation()">
+      <button class="legal-modal-close" onclick="closeLegalModal('privacy')">✕</button>
+      <div class="legal-modal-header">
+        <div class="legal-modal-badge">Legal Document</div>
+        <h2>Privacy Policy</h2>
+        <p class="legal-modal-meta">Last updated: June 1, 2025 &nbsp;·&nbsp; Effective immediately</p>
+      </div>
+      <div class="legal-modal-body">
+
+        <div class="legal-section">
+          <h3><span class="legal-num">01</span> Overview</h3>
+          <p>Nanda CySec (<strong>"we"</strong>, <strong>"us"</strong>, or <strong>"our"</strong>) is committed to
+            protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard any information
+            you
+            provide when visiting this portfolio website. We take your privacy seriously — as a cybersecurity
+            specialist, data protection is not just a policy, it is a core principle.</p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">02</span> Information We Collect</h3>
+          <p>We may collect the following types of information:</p>
+          <ul>
+            <li><strong>Contact Information:</strong> Name and email address voluntarily provided through contact
+              forms
+              or direct email.</li>
+            <li><strong>Usage Data:</strong> Anonymous browsing data such as pages visited, time on site, and device
+              type — collected via analytics tools to improve user experience.</li>
+            <li><strong>Communication Records:</strong> Messages sent through third-party platforms (WhatsApp,
+              Instagram, NGL) are subject to those platforms' own privacy policies.</li>
+          </ul>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">03</span> How We Use Your Information</h3>
+          <p>Any information collected is used solely for the following purposes:</p>
+          <ul>
+            <li>To respond to inquiries and facilitate project discussions.</li>
+            <li>To improve the performance and content of this website.</li>
+            <li>To send relevant project proposals or updates — only when explicitly requested.</li>
+          </ul>
+          <p>We do <strong>not</strong> sell, rent, or trade your personal information to any third parties under any
+            circumstances.</p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">04</span> Cookies & Tracking</h3>
+          <p>This website may use minimal cookies or local storage to enhance your browsing experience (e.g.,
+            remembering display preferences). No tracking cookies for advertising purposes are used. You may disable
+            cookies through your browser settings at any time without affecting your ability to use this website.</p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">05</span> Data Security</h3>
+          <p>We implement industry-standard security measures to protect your data. As a cybersecurity professional,
+            we
+            apply best practices including HTTPS encryption, secure communication channels, and minimal data retention
+            policies. However, no method of internet transmission is 100% secure, and we cannot guarantee absolute
+            security.</p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">06</span> Data Retention</h3>
+          <p>Personal data submitted through contact or inquiry forms is retained only for as long as necessary to
+            fulfill the purpose for which it was collected — typically the duration of the professional relationship.
+            You may request deletion of your data at any time by contacting us directly.</p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">07</span> Your Rights</h3>
+          <p>You have the right to:</p>
+          <ul>
+            <li>Request access to any personal data we hold about you.</li>
+            <li>Request correction or deletion of your personal data.</li>
+            <li>Withdraw consent for data processing at any time.</li>
+            <li>Lodge a complaint with a relevant data protection authority.</li>
+          </ul>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">08</span> Changes to This Policy</h3>
+          <p>This Privacy Policy may be updated periodically to reflect changes in our practices or legal
+            requirements.
+            The "Last updated" date at the top of this document indicates when the latest revision was made. Continued
+            use of this website after changes constitutes acceptance of the updated policy.</p>
+        </div>
+
+        <div class="legal-section">
+          <h3><span class="legal-num">09</span> Contact</h3>
+          <p>For any privacy-related concerns or data requests, please contact us at <a
+              href="mailto:afifgwantengfull@gmail.com" style="color:var(--accent)">afifgwantengfull@gmail.com</a>.</p>
+        </div>
+
+      </div>
+      <div class="legal-modal-footer">
+        <p>© 2025 Nanda CySec. All rights reserved.</p>
+        <button class="btn btn-primary" style="padding:10px 24px;font-size:13px;" onclick="closeLegalModal('privacy')">I
+          Understand</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ LEGAL MODAL STYLES ═══ -->
+  <style>
+    .legal-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      animation: modalFadeIn 0.3s ease;
+    }
+
+    .legal-modal-overlay.open {
+      display: flex;
+    }
+
+    @keyframes modalFadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .legal-modal {
+      background: #0d0d0f;
+      border: 1px solid rgba(167, 139, 250, 0.15);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 720px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(167, 139, 250, 0.08);
+      animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(32px) scale(0.97);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .legal-modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.6);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      z-index: 2;
+    }
+
+    .legal-modal-close:hover {
+      background: rgba(167, 139, 250, 0.15);
+      color: #fff;
+      border-color: rgba(167, 139, 250, 0.3);
+    }
+
+    .legal-modal-header {
+      padding: 40px 40px 28px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .legal-modal-badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent, #a78bfa);
+      background: rgba(167, 139, 250, 0.08);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+
+    .legal-modal-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .legal-modal-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.35);
+      margin: 0;
+    }
+
+    .legal-modal-body {
+      overflow-y: auto;
+      padding: 32px 40px;
+      flex: 1;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(167, 139, 250, 0.3) transparent;
+    }
+
+    .legal-modal-body::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .legal-modal-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .legal-modal-body::-webkit-scrollbar-thumb {
+      background: rgba(167, 139, 250, 0.3);
+      border-radius: 4px;
+    }
+
+    .legal-section {
+      margin-bottom: 32px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .legal-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .legal-section h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .legal-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--accent, #a78bfa);
+      background: rgba(167, 139, 250, 0.08);
+      border: 1px solid rgba(167, 139, 250, 0.15);
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .legal-section p {
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.55);
+      line-height: 1.75;
+      margin: 0 0 12px;
+    }
+
+    .legal-section p:last-child {
+      margin-bottom: 0;
+    }
+
+    .legal-section ul {
+      margin: 10px 0 12px 4px;
+      padding-left: 16px;
+    }
+
+    .legal-section ul li {
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.5);
+      line-height: 1.7;
+      margin-bottom: 6px;
+      padding-left: 4px;
+    }
+
+    .legal-section strong {
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 600;
+    }
+
+    .legal-modal-footer {
+      padding: 20px 40px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .legal-modal-footer p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.25);
+      margin: 0;
+    }
+
+    @media (max-width: 600px) {
+
+      .legal-modal-header,
+      .legal-modal-body,
+      .legal-modal-footer {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+
+      .legal-modal-footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+
+  <style>
+    .hero-spline {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 55%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .hero-spline spline-viewer {
+      width: 100%;
+      height: 100%;
+      --spline-viewer-logo: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    @media (max-width: 768px) {
+      .hero-spline {
+        width: 100%;
+        height: 50%;
+        top: auto;
+        bottom: 0;
+        opacity: 0.5;
+      }
+    }
+  </style>
+
+  <!-- ═══ LEGAL MODAL SCRIPTS ═══ -->
+  <script>
+    function openLegalModal(type) {
+      document.getElementById('modal-' + type).classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLegalModal(type) {
+      document.getElementById('modal-' + type).classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        closeLegalModal('terms');
+        closeLegalModal('privacy');
+      }
+    });
+  </script>
+
+  <script src="cinematic-intro.js" defer></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
