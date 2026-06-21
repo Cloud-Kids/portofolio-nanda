@@ -1,9 +1,10 @@
 # =============================================================================
-# 🚀 GitHub Actions — Deploy Static Website ke Proxmox LXC (Active-Active)
+# 🚀 GitHub Actions — CI/CD Pipeline: Deploy Static Website ke Proxmox LXC
 # =============================================================================
-# Arsitektur 2-Tahap:
-#   Tahap 1 (provision): Terraform provisioning LXC container di Proxmox
-#   Tahap 2 (deploy):    rsync file website ke kedua CT secara paralel
+# Arsitektur 3-Tahap (CI → CD Provision → CD Deploy):
+#   Tahap 0 (code-validation): CI gatekeeper — validasi HTML, secret scan, assets
+#   Tahap 1 (provision):       Terraform provisioning LXC container di Proxmox
+#   Tahap 2 (deploy):          rsync file website ke kedua CT secara paralel
 #
 #   Cloudflare (50:50) ──► CT web1 "node1"  (10.10.10.111)
 #                       └─► CT web2 "node2"  (10.10.10.112)
@@ -13,9 +14,9 @@
 # bisa akses IP private tanpa routing tambahan.
 #
 # Secrets yang harus di-set di GitHub repo Settings > Secrets:
-#   - DEPLOY_USER      → SSH username (default: root atau deploy user)
-#   - DEPLOY_KEY       → SSH private key untuk rsync
-#   - PVE_API_TOKEN    → API Token Proxmox (format: user@realm!tokenid=secret)
+#   - DEPLOY_USER       → SSH username (default: root atau deploy user)
+#   - DEPLOY_KEY        → SSH private key untuk rsync
+#   - PVE_API_TOKEN     → API Token Proxmox (format: user@realm!tokenid=secret)
 #   - DEPLOY_PUBLIC_KEY → SSH public key untuk ditanam di CT via Terraform
 # =============================================================================
 
@@ -34,10 +35,137 @@ concurrency:
   cancel-in-progress: true
 
 # ── Runner: self-hosted (ada di dalam Proxmox network) ─────────────────────
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
+  # =========================================================================
+  # 🔍 TAHAP 0: CI — Validasi Kode (Satpam Kualitas!)
+  # =========================================================================
+  # Job ini jalan PERTAMA. Kalau gagal, provision & deploy TIDAK jalan.
+  # Cek: HTML valid, tidak ada secret bocor, file assets lengkap.
+  # =========================================================================
+  code-validation:
+    runs-on: self-hosted
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v5
+
+      - name: 🏗️ Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      # ── Cek 1: HTML syntax (unclosed tags, missing doctype) ──────────
+      - name: 🔬 HTML validation
+        run: |
+          set +e
+          echo "🔍 Validating HTML files..."
+          ERRORS=0
+
+          for f in *.html; do
+            [ -f "$f" ] || continue
+            echo "  → Checking $f ..."
+
+            # Cek <!DOCTYPE> di baris pertama
+            head -1 "$f" | grep -qi '<!doctype\|<!DOCTYPE' || {
+              echo "    ⚠️  $f: missing <!DOCTYPE html>"
+            }
+
+            # Cek tag <html> dan </html>
+            grep -q '<html' "$f" || { echo "    ❌ $f: missing <html> tag"; ERRORS=$((ERRORS+1)); }
+            grep -q '</html>' "$f" || { echo "    ❌ $f: missing </html> tag"; ERRORS=$((ERRORS+1)); }
+
+            # Cek tag <head> dan <body>
+            grep -q '<head' "$f" || { echo "    ❌ $f: missing <head> tag"; ERRORS=$((ERRORS+1)); }
+            grep -q '<body' "$f" || { echo "    ❌ $f: missing <body> tag"; ERRORS=$((ERRORS+1)); }
+
+            echo "    ✅ $f: structure OK"
+          done
+
+          if [ $ERRORS -gt 0 ]; then
+            echo "❌ HTML validation failed with $ERRORS error(s)!"
+            exit 1
+          fi
+          echo "✅ All HTML files passed validation!"
+
+      # ── Cek 2: Secret leak detection (token/password di kode) ──────
+      - name: 🛡️ Secret leak scan
+        run: |
+          set +e
+          echo "🛡️ Scanning for leaked secrets..."
+          LEAKS=0
+
+          # Pola yang di-scan (jangan match di .github/workflows karena memang ada secrets.*)
+          SCAN_FILES="*.html *.css *.js terraform/*.tf"
+
+          for pattern in \
+            'ghp_[A-Za-z0-9]{36}' \
+            'gho_[A-Za-z0-9]{36}' \
+            'github_pat_[A-Za-z0-9_]{82}' \
+            'sk-[A-Za-z0-9]{48}' \
+            'AKIA[0-9A-Z]{16}' \
+            '-----BEGIN.*PRIVATE KEY-----'; do
+            
+            RESULT=$(grep -rn -E "$pattern" $SCAN_FILES 2>/dev/null | grep -v 'terraform_1' | grep -v '# ')
+            if [ -n "$RESULT" ]; then
+              echo "  ❌ Potential secret found:"
+              echo "$RESULT"
+              LEAKS=$((LEAKS+1))
+            fi
+          done
+
+          if [ $LEAKS -gt 0 ]; then
+            echo "❌ $LEAKS potential secret(s) found! Remove before deploying."
+            exit 1
+          fi
+          echo "✅ No secrets leaked in source code!"
+
+      # ── Cek 3: Asset completeness (CSS/JS/img referenced exist) ──────
+      - name: 📦 Asset completeness check
+        run: |
+          set +e
+          echo "📦 Checking asset references..."
+          MISSING=0
+
+          # Extract referenced CSS files from HTML
+          for f in *.html; do
+            [ -f "$f" ] || continue
+            REFS=$(grep -oP 'href="([^"]+\.css)"' "$f" | grep -oP '"[^"]+"' | tr -d '"' | grep -v 'http')
+            for ref in $REFS; do
+              if [ ! -f "$ref" ]; then
+                echo "  ❌ $f references '$ref' but file not found!"
+                MISSING=$((MISSING+1))
+              else
+                echo "  ✅ $ref (referenced in $f) exists"
+              fi
+            done
+
+            # Extract referenced JS files from HTML
+            REFS=$(grep -oP 'src="([^"]+\.js)"' "$f" | grep -oP '"[^"]+"' | tr -d '"' | grep -v 'http')
+            for ref in $REFS; do
+              if [ ! -f "$ref" ]; then
+                echo "  ❌ $f references '$ref' but file not found!"
+                MISSING=$((MISSING+1))
+              else
+                echo "  ✅ $ref (referenced in $f) exists"
+              fi
+            done
+          done
+
+          if [ $MISSING -gt 0 ]; then
+            echo "❌ $MISSING referenced asset(s) missing!"
+            exit 1
+          fi
+          echo "✅ All referenced assets exist!"
+
+      # ── Cek 4: Terraform format check ───────────────────────────────
+      - name: 🏗️ Terraform format check
+        working-directory: terraform
+        run: |
+          terraform fmt -check -recursive || {
+            echo "❌ Terraform files are not properly formatted!"
+            echo "   Run 'terraform fmt' locally and commit the changes."
+            exit 1
+          }
+          echo "✅ Terraform files are properly formatted!"
+
   # =========================================================================
   # 🏗️ TAHAP 1: Provisioning — Terraform bikin LXC container otomatis
   # =========================================================================
@@ -50,16 +178,17 @@ jobs:
   # Kalau container udah ada, Terraform skip (idempoten).
   # =========================================================================
   provision:
+    needs: [code-validation]
     runs-on: self-hosted
 
     steps:
       # ── Step 1: Checkout kode dari repo ─────────────────────────────────
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # ── Step 2: Setup Terraform CLI ─────────────────────────────────────
       - name: 🏗️ Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
 
       # ── Step 2.5: Add Proxmox hosts ke known_hosts (WAJIB sebelum Terraform SSH!) ──
       # Tanpa ini, Terraform SSH ke node2 gagal karena host key belum dikenal.
@@ -101,7 +230,7 @@ jobs:
     steps:
       # ── Step 1: Checkout kode dari repo ─────────────────────────────────
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # ── Step 2: Setup SSH key dari GitHub Secrets ───────────────────────
       # Key ditulis ke file sementara, permission 600 supaya SSH accept.

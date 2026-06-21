@@ -45,11 +45,22 @@ Repo ini adalah pipeline CI/CD lengkap yang menggabungkan **Terraform** (Infrast
 
 ---
 
-## 🔄 Pipeline Flow (End-to-End Self-Healing)
+## 🔄 Pipeline Flow (CI/CD + End-to-End Self-Healing)
 
-Pipeline ini memiliki **3 layer self-healing** yang otomatis memperbaiki masalah jaringan dan permission tanpa intervensi manual:
+Pipeline ini memiliki **3 tahap** (CI → CD Provision → CD Deploy) dengan **3 layer self-healing** yang otomatis memperbaiki masalah jaringan dan permission tanpa intervensi manual:
 
 ```
+┌──────────────────── TAHAP 0: CI Gatekeeper ────────────────────────────────┐
+│                                                                            │
+│  📥 Checkout → 🔬 HTML validation → 🛡️ Secret scan                        │
+│             → 📦 Asset check     → 🏗️ Terraform fmt                       │
+│                                                                            │
+│  Kalau GAGAL → pipeline STOP. Terraform & rsync TIDAK jalan.               │
+│  Server produksi tetap aman menampilkan versi terakhir yang normal.         │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
 ┌──────────────────── TAHAP 1: Terraform Provisioning ────────────────────┐
 │                                                                         │
 │  CT boot → flush network → static IP + DNS → diagnostic snapshot        │
@@ -250,6 +261,44 @@ ping -c 3 10.10.10.201
 > ping -c 3 10.10.10.111   # web1
 > ping -c 3 10.10.10.112   # web2
 > ```
+
+### 1.5 — Cabut Runner (Jika Perlu Ganti Token / Pindah Repo)
+
+> ⚠️ **Jangan langsung `config.sh remove`!** Kalau runner masih terinstall sebagai systemd service, kamu harus uninstall service DULU. Urutan yang salah bikin runner "nyangkut" (ghost runner) di GitHub.
+
+**Urutan yang benar:**
+
+```bash
+cd /home/runner/actions-runner
+
+# 1. Stop service
+sudo ./svc.sh stop
+
+# 2. Uninstall systemd service
+sudo ./svc.sh uninstall
+
+# 3. Baru cabut runner dari GitHub (butuh remove token baru dari GitHub UI)
+./config.sh remove --token <REMOVE_TOKEN>
+```
+
+**Dapatkan Remove Token dari GitHub:**
+1. Buka repo → **Settings → Actions → Runners**
+2. Klik runner yang mau dicabut
+3. Klik **Remove** → copy token yang muncul
+
+**Output sukses:**
+```
+√ Runner removed successfully
+√ Removed .credentials
+√ Removed .runner
+```
+
+> 💡 **Kapan perlu cabut runner?**
+> - Ganti repository (repo lama dihapus/di-rename)
+> - Runner error parah dan perlu re-register dari nol
+> - Pindah runner ke CT/mesin lain
+>
+> Setelah cabut, jalankan ulang `./config.sh --url ... --token ...` seperti Step 1.3 untuk register baru.
 
 ---
 
@@ -672,9 +721,18 @@ CYSEC-V2/
 ├── Trigger: push ke branch main
 ├── Concurrency: cancel deploy lama kalau ada push baru
 │
-├── 🏗️ Job 1: provision (Terraform)
+├── 🔍 Job 0: code-validation (CI Gatekeeper)
 │   ├── 📥 Checkout repository
 │   ├── 🏗️ Setup Terraform (hashicorp/setup-terraform@v3)
+│   ├── 🔬 HTML validation (DOCTYPE, <html>, <head>, <body>)
+│   ├── 🛡️ Secret leak scan (GitHub tokens, AWS keys, private keys)
+│   ├── 📦 Asset completeness (CSS/JS references exist)
+│   └── 🏗️ Terraform format check (terraform fmt -check)
+│
+├── 🏗️ Job 1: provision (needs: code-validation)
+│   ├── 📥 Checkout repository
+│   ├── 🏗️ Setup Terraform (hashicorp/setup-terraform@v3)
+│   ├── 🔐 Add Proxmox hosts to known_hosts (ssh-keyscan)
 │   ├── 📦 Terraform Init (working-dir: terraform/)
 │   └── 🚀 Terraform Apply -auto-approve
 │       └── Env: TF_VAR_proxmox_api_token, TF_VAR_ssh_public_key,
