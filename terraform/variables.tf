@@ -16,15 +16,40 @@ variable "proxmox_api_token" {
 
 # ── IP Management Proxmox Node (untuk SSH pct exec) ──────────────────
 variable "proxmox_node1_host" {
-  description = "IP SSH management node1 (tempat CT web1 berada)"
+  description = "IP SSH management node1 (tempat CT web1 & nanda-lb1 berada)"
   type        = string
   default     = "10.10.10.201"
 }
 
 variable "proxmox_node2_host" {
-  description = "IP SSH management node2 (tempat CT web2 berada)"
+  description = "IP SSH management node2 (tempat CT web2 & nanda-lb2 berada)"
   type        = string
   default     = "10.10.10.202"
+}
+
+# ── IP Configuration untuk Load Balancer Containers ───────────────────
+variable "lb1_ip" {
+  description = "IP Address untuk nanda-lb1 (Load Balancer 1)"
+  type        = string
+  default     = "10.10.10.121"
+}
+
+variable "lb2_ip" {
+  description = "IP Address untuk nanda-lb2 (Load Balancer 2)"
+  type        = string
+  default     = "10.10.10.122"
+}
+
+variable "web1_ip" {
+  description = "IP Address untuk web1 (Backend 1)"
+  type        = string
+  default     = "10.10.10.111"
+}
+
+variable "web2_ip" {
+  description = "IP Address untuk web2 (Backend 2)"
+  type        = string
+  default     = "10.10.10.112"
 }
 
 variable "ssh_public_key" {
