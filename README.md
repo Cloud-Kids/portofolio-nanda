@@ -1,27 +1,45 @@
 # 🚀 Panduan Deployment Otomatis — Static Website ke Proxmox LXC (GitOps Pipeline)
 
-Repo ini adalah pipeline CI/CD lengkap yang menggabungkan **Terraform** (Infrastructure as Code) dan **GitHub Actions** (rsync deployment) untuk men-deploy website statis ke dua LXC container Active-Active di Proxmox — tanpa intervensi manual setelah setup awal selesai.
+Repo ini adalah pipeline CI/CD lengkap yang menggabungkan **Terraform** (Infrastructure as Code) dan **GitHub Actions** (rsync deployment) untuk men-deploy website statis dengan arsitektur 4-layer High Availability di Proxmox — tanpa intervensi manual setelah setup awal selesai.
 
 ---
 
-## 🏗️ Arsitektur
+## 🏗️ Arsitektur 4-Layer High Availability
 
 ```
                      ┌──────────────────────┐
                      │   Cloudflare Edge    │
-                     │  (Auto Load Balance  │
-                     │   & Failover)        │
+                     │  Tunnel Replicas     │
+                     │  (Failover Layer)     │
                      └──────────┬───────────┘
                                 │
          ┌──────────────────────┴──────────────────────┐
-         │ (Tunnel Conn 1)                             │ (Tunnel Conn 2)
+         │ (Tunnel Conn 1 - ACTIVE)                    │ (Tunnel Conn 2 - STANDBY)
          ▼                                             ▼
+┌──────────────────┐                          ┌──────────────────┐
+│   nanda-lb1      │                          │   nanda-lb2      │
+│   10.10.10.121   │                          │   10.10.10.122   │
+│   (node1)        │                          │   (node2)        │
+│  [cloudflared]   │                          │  [cloudflared]   │
+│  [nginx LB]      │                          │  [nginx LB]      │
+│  Round Robin     │                          │  Round Robin     │
+└────────┬─────────┘                          └────────┬─────────┘
+         │                                               │
+         └──────────────────────┬──────────────────────┘
+                                │
+                    ┌───────────┴───────────┐
+                    │  True 50:50 Traffic   │
+                    │   Load Balancing      │
+                    └───────────┬───────────┘
+                                │
+         ┌──────────────────────┴──────────────────────┐
+         ▼                                              ▼
 ┌──────────────────┐                          ┌──────────────────┐
 │     CT web1      │                          │     CT web2      │
 │   10.10.10.111   │                          │   10.10.10.112   │
 │   (node1)        │                          │   (node2)        │
-│  [cloudflared]   │                          │  [cloudflared]   │
 │  [nginx → :80]   │                          │  [nginx → :80]   │
+│  Backend Active  │                          │  Backend Active  │
 └──────────────────┘                          └──────────────────┘
          ▲                                             ▲
          │              ┌──────────────┐               │
@@ -36,12 +54,22 @@ Repo ini adalah pipeline CI/CD lengkap yang menggabungkan **Terraform** (Infrast
                         └──────────────┘
 ```
 
+### Spesifikasi Pemetaan Topologi Komponen
+
+| Layer / Bagian | Komponen Teknologi | Fungsi Strategis |
+|----------------|-------------------|------------------|
+| **Ingress Gatekeeper** | Cloudflare Tunnel Replicas (Free Tier Token) | Secure public IP exposure dengan automatic failover di layer terluar |
+| **Load Balancer Layer** | Twin Nginx Containers (nanda-lb1 & nanda-lb2) | Reverse Proxy dengan internal Round Robin scheme (50:50 traffic split) |
+| **Backend Cluster** | Twin Minimalist Alpine LXC (web1 & web2) | Main web content server (Nginx Engine) |
+| **Automation Engine** | Terraform & GitHub Actions Runner | Automasi container creation lifecycle hingga parallel self-healing rsync deployment |
+
 **Alur kerja setelah setup selesai:**
 1. `git push` ke branch `main`
 2. GitHub Actions trigger self-hosted runner
-3. **Job 1 (Terraform):** Buat CT + inject `cloudflared` dengan token tunnel (auto-HA!)
-4. **Job 2 (Rsync):** Deploy file website ke kedua CT secara paralel
-5. Cloudflare Edge deteksi 2 tunnel connections → auto load balance + failover!
+3. **Job 1 (Terraform):** Buat 4 CT (2 LB + 2 Backend) + inject `cloudflared` ke LB containers (auto-HA!)
+4. **Job 2 (Rsync):** Deploy file website ke kedua backend CT secara paralel
+5. Cloudflare Edge deteksi 2 tunnel connections → auto failover antara LB containers
+6. Nginx LB di container aktif membagi traffic 50:50 ke backend web1 & web2
 
 ---
 
@@ -125,7 +153,7 @@ Minimal yang harus sudah ada sebelum memulai:
 - ✅ **Koneksi internet** di node Proxmox (untuk download template & GitHub runner)
 - ✅ **Proxmox API Token** sudah dibuat (dijelaskan di Step 3)
 
-> 💡 **Catatan:** CT web target (web1 & web2) TIDAK perlu dibuat manual — Terraform akan membuatnya otomatis di Step 4!
+> 💡 **Catatan:** Semua CT (nanda-lb1, nanda-lb2, web1, web2) TIDAK perlu dibuat manual — Terraform akan membuatnya otomatis di Step 4!
 
 ---
 
@@ -501,21 +529,34 @@ Kalau langsung masuk tanpa password → **aman!** 🎉
 
 ## 🏗️ Step 4: Provisioning Infrastruktur dengan Terraform
 
-Sebelum file website bisa di-deploy, kita butuh dua LXC Container (`web1` & `web2`) sebagai server target.
+Sebelum file website bisa di-deploy, kita butuh empat LXC Container sebagai server target:
+- **2 Load Balancer Containers** (nanda-lb1 & nanda-lb2) dengan Cloudflare Tunnel + Nginx LB
+- **2 Backend Web Containers** (web1 & web2) sebagai web server
 
 > **Kamu tidak perlu buka GUI Proxmox. Kamu tidak perlu SSH manual. Kamu tidak perlu `nano` apapun.**
 
 Cukup pastikan file `terraform/variables.tf` sudah sesuai spesifikasi keinginanmu. Saat kamu melakukan `git push` di Step 5 nanti, GitHub Actions akan menyuruh Terraform untuk:
 
-1. ✅ Membuat CT `web1` di node1 (IP: 10.10.10.111)
-2. ✅ Membuat CT `web2` di node2 (IP: 10.10.10.112)
+**Load Balancer Containers (nanda-lb1 & nanda-lb2):**
+1. ✅ Membuat CT `nanda-lb1` di node1 (IP: 10.10.10.121)
+2. ✅ Membuat CT `nanda-lb2` di node2 (IP: 10.10.10.122)
 3. ✅ Menanam `DEPLOY_PUBLIC_KEY` secara otomatis ke kedua CT
 4. ✅ Set CPU, RAM, disk sesuai `variables.tf`
 5. ✅ Start kedua CT
 6. ✅ **Self-healing network setup: flush → static IP → DNS → connectivity check**
 7. ✅ **Install OpenSSH + configure sshd + Cloudflared tunnel via `lxc-attach`**
-8. ✅ **Install + configure nginx (serve `/var/www/html` di port 80)**
-9. ✅ **Buat `/var/www/html` (chmod 777) untuk rsync target**
+8. ✅ **Install + configure Nginx Load Balancer (Round Robin ke web1 & web2)**
+
+**Backend Web Containers (web1 & web2):**
+9. ✅ Membuat CT `web1` di node1 (IP: 10.10.10.111)
+10. ✅ Membuat CT `web2` di node2 (IP: 10.10.10.112)
+11. ✅ Menanam `DEPLOY_PUBLIC_KEY` secara otomatis ke kedua CT
+12. ✅ Set CPU, RAM, disk sesuai `variables.tf`
+13. ✅ Start kedua CT
+14. ✅ **Self-healing network setup: flush → static IP → DNS → connectivity check**
+15. ✅ **Install OpenSSH + configure sshd via `lxc-attach`**
+16. ✅ **Install + configure nginx (serve `/var/www/html` di port 80)**
+17. ✅ **Buat `/var/www/html` (chmod 777) untuk rsync target**
 
 **Kamu langsung skip ke Step 5. Tidak ada kerja manual!** 🎉
 
@@ -523,9 +564,11 @@ Cukup pastikan file `terraform/variables.tf` sudah sesuai spesifikasi keinginanm
 
 ```
 terraform/
-├── main.tf                      ← Provider + resource CT web1 & web2 (lxc-attach provisioning)
+├── main.tf                      ← Provider + resource CT nanda-lb1, nanda-lb2, web1, web2
+│                                 (lxc-attach provisioning)
 ├── variables.tf                 ← Spesifikasi (CPU, RAM, disk, IP, node host, template)
-├── outputs.tf                   ← Output IP & hostname setelah apply
+│                                 + IP configuration untuk LB & backend containers
+├── outputs.tf                   ← Output IP & hostname semua CT setelah apply
 ├── download-template.tf.example ← (Opsional) Rename ke .tf jika mau auto-download template
 └── .gitignore                   ← Exclude .terraform/, *.tfstate
 ```
@@ -533,12 +576,21 @@ terraform/
 > **🔧 Host-Based Provisioning (lxc-attach)**
 > Alpine Linux di Proxmox **tidak menyalakan SSH secara default**. Daripada pakai hook script (yang butuh `root@pam` dan snippets), kita pakai strategi yang lebih robust:
 >
+> **Untuk Load Balancer Containers (nanda-lb1 & nanda-lb2):**
 > 1. Terraform SSH ke **Proxmox host** (10.10.10.201 / .202)
 > 2. Dari host, jalankan `lxc-attach -n <VMID>` untuk:
 >    - Setup network (flush → static IP → DNS `/etc/resolv.conf`)
 >    - Self-healing `apk update` loop (150s, repair at 25%/50%/75%)
 >    - Enable SSH (`PermitRootLogin`, `PubkeyAuthentication`, start sshd)
 >    - Install Cloudflare Tunnel + buat OpenRC init script
+>    - Install + configure Nginx Load Balancer (Round Robin ke web1 & web2)
+>
+> **Untuk Backend Web Containers (web1 & web2):**
+> 1. Terraform SSH ke **Proxmox host** (10.10.10.201 / .202)
+> 2. Dari host, jalankan `lxc-attach -n <VMID>` untuk:
+>    - Setup network (flush → static IP → DNS `/etc/resolv.conf`)
+>    - Self-healing `apk update` loop (150s, repair at 25%/50%/75%)
+>    - Enable SSH (`PermitRootLogin`, `PubkeyAuthentication`, start sshd)
 >    - Install + configure nginx (root `/var/www/html`, port 80)
 >    - Buat `/var/www/html` dengan `chmod 777`
 > 3. CT sekarang siap menerima rsync di Tahap 2!
@@ -578,6 +630,23 @@ variable "proxmox_node1_host" {
 variable "proxmox_node2_host" {
   default = "10.10.10.202"  # Sesuaikan dengan IP node2 kamu
 }
+
+# IP Configuration untuk Load Balancer Containers
+variable "lb1_ip" {
+  default = "10.10.10.121"  # IP untuk nanda-lb1
+}
+
+variable "lb2_ip" {
+  default = "10.10.10.122"  # IP untuk nanda-lb2
+}
+
+variable "web1_ip" {
+  default = "10.10.10.111"  # IP untuk web1 (backend)
+}
+
+variable "web2_ip" {
+  default = "10.10.10.112"  # IP untuk web2 (backend)
+}
 ```
 
 #### ♻️ Idempotensi — Aman Push Berkali-kali!
@@ -608,8 +677,10 @@ Push ke main
     ▼
 ┌─────────────────────────────────────┐
 │  🏗️ Job 1: provision                │
-│  Terraform Init + Apply             │  ← Buat/pastikan CT ada (idempoten)
-│  working-dir: terraform/            │     + self-healing network + SSH + cloudflared
+│  Terraform Init + Apply             │  ← Buat/pastikan 4 CT ada (idempoten)
+│  working-dir: terraform/            │     + self-healing network + SSH
+│                                      │     + cloudflared di LB containers
+│                                      │     + nginx LB di LB containers
 └──────────────┬──────────────────────┘
                │ (lanjut jika sukses)
                ▼
@@ -618,7 +689,7 @@ Push ke main
 │  Step 1: Checkout + SSH key setup        │
 │  Step 2: known_hosts (CT + PVE)          │
 │  Step 3: SSH readiness (self-heal)       │  ← Retry + lxc-attach repair sshd
-│  Step 4: Rsync parallel (self-heal)      │  ← Retry + fix perms via Proxmox
+│  Step 4: Rsync parallel (self-heal)      │  ← Deploy ke web1 & web2 (backend)
 │  Step 5: Fix permissions + reload nginx  │
 │  Step 6: Cleanup SSH key                 │
 └──────────────────────────────────────────┘
@@ -632,7 +703,7 @@ Push ke main
 
 ```
 =========================================
-🔄 Mulai deploy paralel ke kedua CT...
+🔄 Mulai deploy paralel ke backend CT...
    → CT web1: 10.10.10.111
    → CT web2: 10.10.10.112
 =========================================
@@ -652,13 +723,13 @@ Push ke main
 
 ### 5.4 — Verifikasi:
 
-Buka browser → akses website. Refresh beberapa kali untuk memastikan kedua CT serve konten yang sama (Cloudflare auto load balance melalui tunnel).
+Buka browser → akses website. Refresh beberapa kali untuk memastikan kedua backend CT serve konten yang sama (Nginx LB di container aktif membagi traffic 50:50).
 
 ---
 
 ## ☁️ Cloudflare Tunnel: Setup di Dashboard
 
-Setelah pipeline berhasil jalan dan kedua CT memiliki `cloudflared` yang aktif, konfigurasi di sisi Cloudflare:
+Setelah pipeline berhasil jalan dan kedua Load Balancer CT (nanda-lb1 & nanda-lb2) memiliki `cloudflared` yang aktif, konfigurasi di sisi Cloudflare:
 
 ### Di Cloudflare Zero Trust Dashboard:
 
@@ -671,17 +742,17 @@ Setelah pipeline berhasil jalan dan kedua CT memiliki `cloudflared` yang aktif, 
    - **Type:** `HTTP`
    - **URL:** `localhost:80`
 
-> 💡 Karena `cloudflared` jalan **di dalam** masing-masing CT, `localhost:80` merujuk ke Nginx internal CT itu sendiri. Tidak perlu IP private!
+> 💡 Karena `cloudflared` jalan **di dalam** masing-masing Load Balancer CT, `localhost:80` merujuk ke Nginx Load Balancer internal CT itu sendiri. Tidak perlu IP private! Nginx LB kemudian akan membagi traffic ke backend web1 & web2.
 
 ### Hasil di Dashboard:
 
 ```
 Tunnel: "web-ha"
 Status: ✅ Healthy
-Connections: 2 (10.10.10.111, 10.10.10.112)
+Connections: 2 (10.10.10.121, 10.10.10.122)
 ```
 
-Jika salah satu CT mati → Cloudflare otomatis failover ke CT yang masih hidup dalam hitungan milidetik. **Zero local SPOF!**
+Jika salah satu Load Balancer CT mati → Cloudflare otomatis failover ke LB CT yang masih hidup dalam hitungan milidetik. Nginx LB di container aktif akan membagi traffic 50:50 ke backend web1 & web2. **Zero local SPOF!**
 
 ---
 
@@ -694,10 +765,11 @@ CYSEC-V2/
 │   └── deploy.yml                  ← GitHub Actions workflow (2-job pipeline)
 │
 ├── terraform/
-│   ├── main.tf                     ← Provider + resource CT web1 & web2
+│   ├── main.tf                     ← Provider + resource CT nanda-lb1, nanda-lb2, web1, web2
 │   │                                 (lxc-attach self-healing provisioning)
 │   ├── variables.tf                ← Spesifikasi CT (CPU, RAM, disk, IP, template)
-│   ├── outputs.tf                  ← Output IP & hostname setelah apply
+│   │                                 + IP configuration untuk LB & backend containers
+│   ├── outputs.tf                  ← Output IP & hostname semua CT setelah apply
 │   ├── download-template.tf.example← (Opsional) Auto-download Alpine template
 │   └── .gitignore                  ← Exclude .terraform/, *.tfstate
 │
